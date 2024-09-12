@@ -666,12 +666,16 @@ const fzLocal = {
             const data = msg.data.slice(3);
             if (command == 0xe6) {
                 const value = splitToAttributes(data);
-                return {
-                    temperature_threshold: value[0x05][1],
-                    temperature_breaker: lookup[value[0x05][0]],
-                    power_threshold: value[0x07][1],
-                    power_breaker: lookup[value[0x07][0]],
-                };
+                const result: KeyValue = {};
+                if (0x05 in value) {
+                    result.temperature_threshold = value[0x05][1];
+                    result.temperature_breaker = lookup[value[0x05][0]];
+                }
+                if (0x07 in value) {
+                    result.power_threshold = value[0x07][1];
+                    result.power_breaker = lookup[value[0x07][0]];
+                }
+                return result;
             }
             if (command == 0xe7) {
                 const value = splitToAttributes(data);
@@ -956,10 +960,7 @@ const definitions: DefinitionWithExtend[] = [
                 [10, 'battery', tuya.valueConverter.raw],
             ],
         },
-        whiteLabel: [
-            tuya.whitelabel('Linkoze', 'LKWSZ211', 'Wireless switch (2-key)', ['_TZ3210_3ulg9kpo']),
-            tuya.whitelabel('Adaprox', 'LKWSZ211', 'Remote wireless switch (2-key)', ['_TZ3210_3ulg9kpo']),
-        ],
+        whiteLabel: [tuya.whitelabel('Linkoze', 'LKWSZ211', 'Wireless switch (2-key)', ['_TZ3210_3ulg9kpo'])],
     },
     {
         fingerprint: [
@@ -1560,7 +1561,6 @@ const definitions: DefinitionWithExtend[] = [
             tuya.whitelabel('Lidl', 'HG08131C', 'Livarno Home outdoor E27 bulb in set with flare', ['_TZ3000_q50zhdsc']),
             tuya.whitelabel('Lidl', 'HG07834C', 'Livarno Lux E27 bulb RGB', ['_TZ3000_qd7hej8u']),
             tuya.whitelabel('MiBoxer', 'FUT037Z+', 'RGB led controller', ['_TZB210_417ikxay', '_TZB210_wxazcmsh']),
-            tuya.whitelabel('MiBoxer', 'E2-ZR', '2 in 1 led controller', ['_TZB210_ayx58ft5']),
             tuya.whitelabel('Lidl', 'HG08383B', 'Livarno outdoor LED light chain', ['_TZ3000_bwlvyjwk']),
             tuya.whitelabel('Lidl', 'HG08383A', 'Livarno outdoor LED light chain', ['_TZ3000_taspddvq']),
             tuya.whitelabel('Garza Smart', 'Garza-Standard-A60', 'Standard A60 bulb', ['_TZ3210_sln7ah6r']),
@@ -1897,15 +1897,14 @@ const definitions: DefinitionWithExtend[] = [
         model: 'RB-SRAIN01',
         vendor: 'Tuya',
         description: 'Solar rain sensor',
-        fromZigbee: [tuya.fz.datapoints, fz.battery, fz.ias_water_leak_alarm_1],
-        toZigbee: [],
+        fromZigbee: [tuya.fz.datapoints],
+        extend: [iasZoneAlarm({zoneType: 'rain', zoneAttributes: ['alarm_1']}), battery({percentageReporting: false})],
         exposes: [
             e.illuminance().withUnit('lx'),
             e.numeric('illuminance_average_20min', ea.STATE).withUnit('lx').withDescription('Illuminance average for the last 20 minutes'),
             e.numeric('illuminance_maximum_today', ea.STATE).withUnit('lx').withDescription('Illuminance maximum for the last 24 hours'),
-            e.binary('cleaning_reminder', ea.STATE, 'ON', 'OFF').withDescription('Cleaning reminder'),
-            e.numeric('rain_intensity', ea.STATE).withDescription('Rainfall intensity'),
-            e.battery(),
+            e.binary('cleaning_reminder', ea.STATE, true, false).withDescription('Cleaning reminder'),
+            e.numeric('rain_intensity', ea.STATE).withUnit('mV').withDescription('Rainfall intensity'),
         ],
         meta: {
             tuyaDatapoints: [
@@ -2958,6 +2957,7 @@ const definitions: DefinitionWithExtend[] = [
                 '_TZ3210_xwqng7ol',
                 '_TZB210_lmqquxus',
             ]),
+            tuya.whitelabel('MiBoxer', 'E2-ZR', '2 in 1 LED controller', ['_TZB210_ayx58ft5']),
             tuya.whitelabel('Lidl', '14156408L', 'Livarno Lux smart LED ceiling light', ['_TZ3210_c2iwpxf1']),
         ],
         extend: [tuya.modernExtend.tuyaLight({colorTemp: {range: [153, 500]}, configureReporting: true})],
@@ -3206,7 +3206,15 @@ const definitions: DefinitionWithExtend[] = [
          */
     },
     {
-        fingerprint: tuya.fingerprint('TS004F', ['_TZ3000_nuombroo', '_TZ3000_xabckq1v', '_TZ3000_czuyt8lz', '_TZ3000_0ht8dnxj', '_TZ3000_b3mgfu0d']),
+        fingerprint: tuya.fingerprint('TS004F', [
+            '_TZ3000_nuombroo',
+            '_TZ3000_xabckq1v',
+            '_TZ3000_czuyt8lz',
+            '_TZ3000_0ht8dnxj',
+            '_TZ3000_b3mgfu0d',
+            '_TZ3000_11pg3ima',
+            '_TZ3000_et7afzxz',
+        ]),
         model: 'TS004F',
         vendor: 'Tuya',
         description: 'Wireless switch with 4 buttons',
@@ -3222,6 +3230,9 @@ const definitions: DefinitionWithExtend[] = [
                 'brightness_step_down',
                 'brightness_move_up',
                 'brightness_move_down',
+                'color_temperature_step_up',
+                'color_temperature_step_down',
+                'brightness_stop',
                 '1_single',
                 '1_double',
                 '1_hold',
@@ -3236,7 +3247,18 @@ const definitions: DefinitionWithExtend[] = [
                 '4_hold',
             ]),
         ],
-        fromZigbee: [fz.battery, tuya.fz.on_off_action, fz.tuya_operation_mode, fz.command_on, fz.command_off, fz.command_step, fz.command_move],
+        fromZigbee: [
+            fz.battery,
+            tuya.fz.on_off_action,
+            fz.tuya_operation_mode,
+            fz.command_on,
+            fz.command_off,
+            fz.command_step,
+            fz.command_move,
+            fz.command_stop,
+            fz.command_step_color_temperature,
+        ],
+        whiteLabel: [tuya.whitelabel('Zemismart', 'ZMR4', 'Wireless switch with 4 buttons', ['_TZ3000_11pg3ima', '_TZ3000_et7afzxz'])],
         toZigbee: [tz.tuya_operation_mode],
         configure: async (device, coordinatorEndpoint) => {
             const endpoint = device.getEndpoint(1);
@@ -3699,8 +3721,8 @@ const definitions: DefinitionWithExtend[] = [
             tuya.whitelabel('AVATTO', 'ZWSM16-2-Zigbee', '2 gang switch module', ['_TZ3000_mtnpt6ws']),
             tuya.whitelabel('PSMART', 'T442', '2 gang switch module', ['_TZ3000_mufwv0ry']),
             tuya.whitelabel('Lonsonho', 'X702A', '2 gang switch with backlight', ['_TZ3000_54hjn4vs', '_TZ3000_aa5t61rh']),
-            tuya.whitelabel('Homeetec', '37022463', '2 Gang switch with backlight', ['_TZ3000_in5qxhtt']),
-            tuya.whitelabel('RoomsAI', '37022463', '2 Gang switch with backlight', ['_TZ3000_ogpla3lh']),
+            tuya.whitelabel('Homeetec', '37022463-1', '2 Gang switch with backlight', ['_TZ3000_in5qxhtt']),
+            tuya.whitelabel('RoomsAI', '37022463-2', '2 Gang switch with backlight', ['_TZ3000_ogpla3lh']),
         ],
     },
     {
@@ -4121,6 +4143,7 @@ const definitions: DefinitionWithExtend[] = [
             {modelID: 'TS0601', manufacturerName: '_TZE200_7fqkphoq'}, // AFINTEK
             {modelID: 'TS0601', manufacturerName: '_TZE200_rufdtfyv'},
             {modelID: 'TS0601', manufacturerName: '_TZE200_lpwgshtl'},
+            {modelID: 'TS0601', manufacturerName: '_TZE200_rk1wojce'}, // Emos P5630S
         ],
         model: 'TS0601_thermostat',
         vendor: 'Tuya',
@@ -4133,6 +4156,7 @@ const definitions: DefinitionWithExtend[] = [
             {vendor: 'Immax', model: '07732B'},
             tuya.whitelabel('Immax', '07732L', 'Radiator valve with thermostat', ['_TZE200_rufdtfyv']),
             {vendor: 'Evolveo', model: 'Heat M30'},
+            tuya.whitelabel('Emos', 'P5630S', 'Radiator valve with thermostat', ['_TZE200_rk1wojce']),
         ],
         meta: {tuyaThermostatPreset: legacy.thermostatPresets, tuyaThermostatSystemMode: legacy.thermostatSystemModes3},
         ota: ota.zigbeeOTA,
@@ -4321,7 +4345,7 @@ const definitions: DefinitionWithExtend[] = [
         configure: tuya.configureMagicPacket,
         exposes: [
             e.battery(),
-            e.cover_position(),
+            e.cover_position().setAccess('position', ea.STATE_SET),
             e.enum('reverse_direction', ea.STATE_SET, ['forward', 'back']).withDescription('Reverse the motor direction'),
             e.enum('border', ea.STATE_SET, ['up', 'down', 'up_delete', 'down_delete', 'remove_top_bottom']),
             e.enum('click_control', ea.STATE_SET, ['up', 'down']).withDescription('Single motor steps'),
@@ -6409,7 +6433,7 @@ const definitions: DefinitionWithExtend[] = [
                         if (device.manufacturerName === '_TZE200_viy9ihs7') {
                             return {auto: tuya.enum(1), manual: tuya.enum(0), temporary_manual: tuya.enum(2)};
                         } else {
-                            return {manual: tuya.enum(0), auto: tuya.enum(1), temporary_manual: tuya.enum(2)};
+                            return {auto: tuya.enum(0), manual: tuya.enum(1), temporary_manual: tuya.enum(2)};
                         }
                     }),
                 ],
@@ -8355,17 +8379,17 @@ const definitions: DefinitionWithExtend[] = [
                         .withUnit('*C')
                         .withDescription('High temperature threshold'),
                     e.binary('temperature_breaker', ea.STATE_SET, 'ON', 'OFF').withDescription('High temperature breaker'),
-                    e
-                        .numeric('power_threshold', ea.STATE_SET)
-                        .withValueMin(1)
-                        .withValueMax(26)
-                        .withValueStep(1)
-                        .withUnit('kW')
-                        .withDescription('High power threshold'),
-                    e.binary('power_breaker', ea.STATE_SET, 'ON', 'OFF').withDescription('High power breaker'),
                 );
             }
             exposes.push(
+                e
+                    .numeric('power_threshold', ea.STATE_SET)
+                    .withValueMin(1)
+                    .withValueMax(26)
+                    .withValueStep(1)
+                    .withUnit('kW')
+                    .withDescription('High power threshold'),
+                e.binary('power_breaker', ea.STATE_SET, 'ON', 'OFF').withDescription('High power breaker'),
                 e
                     .numeric('over_current_threshold', ea.STATE_SET)
                     .withValueMin(1)
@@ -8524,7 +8548,7 @@ const definitions: DefinitionWithExtend[] = [
         fromZigbee: [tuya.fz.datapoints],
         toZigbee: [tuya.tz.datapoints],
         exposes: [
-            e.cover_position(),
+            e.cover_position().setAccess('position', ea.STATE_SET),
             e.enum('calibration', ea.STATE_SET, ['START', 'END']).withDescription('Calibration'),
             e.binary('backlight_mode', ea.STATE_SET, 'ON', 'OFF').withDescription('Backlight'),
             e.enum('motor_steering', ea.STATE_SET, ['FORWARD', 'BACKWARD']).withDescription('Motor Steering'),
@@ -8577,7 +8601,7 @@ const definitions: DefinitionWithExtend[] = [
         fromZigbee: [tuya.fz.datapoints],
         toZigbee: [tuya.tz.datapoints],
         exposes: [
-            e.cover_position(),
+            e.cover_position().setAccess('position', ea.STATE_SET),
             tuya.exposes.switch().withEndpoint('l1'),
             e.enum('calibration', ea.STATE_SET, ['START', 'END']).withDescription('Calibration'),
             e.binary('backlight_mode', ea.STATE_SET, 'ON', 'OFF').withDescription('Backlight'),
@@ -11415,6 +11439,165 @@ const definitions: DefinitionWithExtend[] = [
                 [103, 'z', tuya.valueConverter.raw],
                 [104, 'sensitivity', tuya.valueConverterBasic.lookup({low: tuya.enum(0), middle: tuya.enum(1), high: tuya.enum(2)})],
                 [105, 'battery', tuya.valueConverter.raw],
+            ],
+        },
+    },
+    {
+        fingerprint: [
+            {modelID: 'TS0601', manufacturerName: '_TZE204_fhvdgeuh'},
+            {modelID: 'TS0601', manufacturerName: '_TZE200_abatw3kj'},
+        ],
+        model: 'TS0601_din_4',
+        vendor: 'Tuya',
+        description: 'Din rail switch with power monitoring and threshold settings',
+        fromZigbee: [tuya.fz.datapoints],
+        toZigbee: [tuya.tz.datapoints],
+        configure: async (device, coordinatorEndpoint) => {
+            await tuya.configureMagicPacket(device, coordinatorEndpoint);
+            // Required to get the device to start reporting
+            await device.getEndpoint(1).command('manuSpecificTuya', 'dataQuery', {});
+        },
+        whiteLabel: [tuya.whitelabel('RTX', 'TS0601_RTX_DIN', 'Din rail switch', ['_TZE200_abatw3kj'])],
+        exposes: [
+            e.switch().setAccess('state', ea.STATE_SET),
+            e.power(),
+            e.current(),
+            e.voltage(),
+            e.energy(),
+            e.numeric('temperature', ea.STATE).withUnit('°C').withDescription('Current temperature'),
+            e.numeric('leakage', ea.STATE).withUnit('mA').withDescription('Current leakage'),
+        ],
+        meta: {
+            tuyaDatapoints: [
+                [16, 'state', tuya.valueConverter.onOff],
+                [1, 'energy', tuya.valueConverter.divideBy100], // Total forward energy
+                [6, null, tuya.valueConverter.phaseVariant2], // Phase A voltage and current
+                // [9, 'fault', tuya.valueConverter.raw], // no expose
+                // [11, 'switch_prepayment', tuya.valueConverter.raw], // no expose
+                // [12, 'clear_energy', tuya.valueConverter.raw], // no expose
+                // [14, 'charge_energy', tuya.valueConverter.raw], // no expose
+                [15, 'leakage', tuya.valueConverter.raw],
+                // [102, 'reclosing_allowed_times', tuya.valueConverter.raw], // no expose
+                [103, 'temperature', tuya.valueConverter.raw],
+                // [104, 'reclosing_enable', tuya.valueConverter.raw], // no expose
+                // [105, 'timer', tuya.valueConverter.raw], // no expose
+                // [106, 'cycle_schedule', tuya.valueConverter.raw], // no expose
+                // [107, 'reclose_recover_seconds', tuya.valueConverter.raw], // no expose
+                // [108, 'random_timing', tuya.valueConverter.raw], // no expose
+                // [109, 'switch_inching', tuya.valueConverter.raw], // no expose
+                // [119, 'power_on_delay_power_on_time', tuya.valueConverter.raw], // no expose
+                // [124, 'overcurrent_event_threshold_time', tuya.valueConverter.raw], // no expose
+                // [125, 'time_threshold_of_lost_flow_event', tuya.valueConverter.raw], // no expose
+                // [127, 'status', tuya.valueConverter.raw], // no expose
+                // [134, 'relay_status_for_power_on', tuya.valueConverter.raw], // no expose
+            ],
+        },
+    },
+    {
+        fingerprint: [{modelID: 'TS0601', manufacturerName: '_TZE204_hcxvyxa5'}],
+        model: 'ZA03',
+        vendor: 'Tuya',
+        description: 'Siren alarm',
+        fromZigbee: [tuya.fz.datapoints],
+        toZigbee: [tuya.tz.datapoints],
+        configure: tuya.configureMagicPacket,
+        exposes: [
+            e.binary('alarm', ea.STATE_SET, 'ON', 'OFF').withDescription('Sound the alarm'),
+            e.enum('volume', ea.STATE_SET, ['low', 'medium', 'high', 'mute']),
+            e.enum('ringtone', ea.STATE_SET, [
+                'ringtone 1',
+                'ringtone 2',
+                'ringtone 3',
+                'ringtone 4',
+                'ringtone 5',
+                'ringtone 6',
+                'ringtone 7',
+                'ringtone 8',
+                'ringtone 9',
+                'ringtone 10',
+                'ringtone 11',
+                'ringtone 12',
+                'ringtone 13',
+                'ringtone 14',
+                'ringtone 15',
+                'ringtone 16',
+                'ringtone 17',
+                'ringtone 18',
+                'ringtone 19',
+                'ringtone 20',
+                'ringtone 21',
+                'ringtone 22',
+                'ringtone 23',
+                'ringtone 24',
+                'ringtone 25',
+                'ringtone 26',
+                'ringtone 27',
+                'ringtone 28',
+                'ringtone 29',
+                'ringtone 30',
+                'ringtone 31',
+                'ringtone 32',
+            ]),
+            e
+                .numeric('duration', ea.STATE_SET)
+                .withValueMin(1)
+                .withValueMax(380)
+                .withValueStep(1)
+                .withUnit('s')
+                .withDescription('How long the alarm sounds for when triggered'),
+        ],
+        meta: {
+            tuyaDatapoints: [
+                [
+                    5,
+                    'volume',
+                    tuya.valueConverterBasic.lookup({
+                        low: tuya.enum(0),
+                        medium: tuya.enum(1),
+                        high: tuya.enum(2),
+                        mute: tuya.enum(3),
+                    }),
+                ],
+                [7, 'duration', tuya.valueConverter.raw],
+                [13, 'alarm', tuya.valueConverter.onOff],
+                [
+                    21,
+                    'ringtone',
+                    tuya.valueConverterBasic.lookup({
+                        'ringtone 1': tuya.enum(0),
+                        'ringtone 2': tuya.enum(1),
+                        'ringtone 3': tuya.enum(2),
+                        'ringtone 4': tuya.enum(3),
+                        'ringtone 5': tuya.enum(4),
+                        'ringtone 6': tuya.enum(5),
+                        'ringtone 7': tuya.enum(6),
+                        'ringtone 8': tuya.enum(7),
+                        'ringtone 9': tuya.enum(8),
+                        'ringtone 10': tuya.enum(9),
+                        'ringtone 11': tuya.enum(10),
+                        'ringtone 12': tuya.enum(11),
+                        'ringtone 13': tuya.enum(12),
+                        'ringtone 14': tuya.enum(13),
+                        'ringtone 15': tuya.enum(14),
+                        'ringtone 16': tuya.enum(15),
+                        'ringtone 17': tuya.enum(16),
+                        'ringtone 18': tuya.enum(17),
+                        'ringtone 19': tuya.enum(18),
+                        'ringtone 20': tuya.enum(19),
+                        'ringtone 21': tuya.enum(20),
+                        'ringtone 22': tuya.enum(21),
+                        'ringtone 23': tuya.enum(22),
+                        'ringtone 24': tuya.enum(23),
+                        'ringtone 25': tuya.enum(24),
+                        'ringtone 26': tuya.enum(25),
+                        'ringtone 27': tuya.enum(26),
+                        'ringtone 28': tuya.enum(27),
+                        'ringtone 29': tuya.enum(28),
+                        'ringtone 30': tuya.enum(29),
+                        'ringtone 31': tuya.enum(30),
+                        'ringtone 32': tuya.enum(31),
+                    }),
+                ],
             ],
         },
     },

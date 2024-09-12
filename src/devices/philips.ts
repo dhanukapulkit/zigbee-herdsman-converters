@@ -3695,6 +3695,34 @@ const definitions: DefinitionWithExtend[] = [
         extend: [philipsLight({colorTemp: {range: [153, 500]}, color: true})],
     },
     {
+        zigbeeModel: ['929003116301'],
+        model: '929003116301',
+        vendor: 'Philips',
+        description: 'Hue Perifo gradient light tube small (black)',
+        extend: [philipsLight({colorTemp: {range: [153, 500]}, color: true, gradient: true})],
+    },
+    {
+        zigbeeModel: ['929003116401'],
+        model: '929003116401',
+        vendor: 'Philips',
+        description: 'Hue Perifo gradient light tube small (white)',
+        extend: [philipsLight({colorTemp: {range: [153, 500]}, color: true, gradient: true})],
+    },
+    {
+        zigbeeModel: ['929003116501'],
+        model: '929003116501',
+        vendor: 'Philips',
+        description: 'Hue Perifo gradient light tube large (black)',
+        extend: [philipsLight({colorTemp: {range: [153, 500]}, color: true, gradient: true})],
+    },
+    {
+        zigbeeModel: ['929003116601'],
+        model: '929003116601',
+        vendor: 'Philips',
+        description: 'Hue Perifo gradient light tube large (white)',
+        extend: [philipsLight({colorTemp: {range: [153, 500]}, color: true, gradient: true})],
+    },
+    {
         zigbeeModel: ['915005988101'],
         model: '915005988101',
         vendor: 'Philips',
@@ -3783,6 +3811,13 @@ const definitions: DefinitionWithExtend[] = [
         model: '929003823701',
         vendor: 'Philips',
         description: 'Hue Tento color 42,1cm',
+        extend: [philipsLight({colorTemp: {range: [153, 500]}, color: {modes: ['xy', 'hs'], enhancedHue: true}})],
+    },
+    {
+        zigbeeModel: ['929003736201_01', '929003736201_02'],
+        model: '929003736201',
+        vendor: 'Philips',
+        description: 'Hue White and Color Ambiance Datura Ceiling light small',
         extend: [philipsLight({colorTemp: {range: [153, 500]}, color: {modes: ['xy', 'hs'], enhancedHue: true}})],
     },
 ];

@@ -50,6 +50,18 @@ const definitions: DefinitionWithExtend[] = [
             device.powerSource = 'Battery';
             device.save();
         },
+        extend: [
+            deviceAddCustomCluster('3rSwitchGen3SpecialCluster', {
+                ID: 0xff02,
+                manufacturerCode: 0x1233,
+                attributes: {
+                    backOn: {ID: 0x0001, type: Zcl.DataType.UINT16},
+                    backOff: {ID: 0x0002, type: Zcl.DataType.UINT16},
+                },
+                commands: {},
+                commandsResponse: {},
+            }),
+        ],
     },
     {
         zigbeeModel: ['3RSS008Z'],
@@ -91,6 +103,18 @@ const definitions: DefinitionWithExtend[] = [
         fromZigbee: [fz.ias_water_leak_alarm_1, fz.battery],
         toZigbee: [],
         ota: ota.zigbeeOTA,
+        extend: [
+            deviceAddCustomCluster('r3Specialcluster', {
+                ID: 0xff01,
+                manufacturerCode: 0x1233,
+                attributes: {
+                    siren_on_off: {ID: 0x0010, type: Zcl.DataType.UINT8},
+                    siren_mintues: {ID: 0x0011, type: Zcl.DataType.UINT8},
+                },
+                commands: {},
+                commandsResponse: {},
+            }),
+        ],
         exposes: [e.water_leak(), e.battery_low(), e.battery(), e.battery_voltage()],
         configure: async (device, coordinatorEndpoint) => {
             const endpoint = device.getEndpoint(1);
@@ -114,6 +138,17 @@ const definitions: DefinitionWithExtend[] = [
             device.powerSource = 'Battery';
             device.save();
         },
+        extend: [
+            deviceAddCustomCluster('3rMotionSpecialCluster', {
+                ID: 0xff01,
+                manufacturerCode: 0x1233,
+                attributes: {
+                    coolDownTime: {ID: 0x0001, type: Zcl.DataType.UINT16},
+                },
+                commands: {},
+                commandsResponse: {},
+            }),
+        ],
     },
     {
         zigbeeModel: ['3RDS17BZ'],
@@ -130,6 +165,17 @@ const definitions: DefinitionWithExtend[] = [
             device.powerSource = 'Battery';
             device.save();
         },
+        extend: [
+            deviceAddCustomCluster('3rDoorSpecialCluster', {
+                ID: 0xff01,
+                manufacturerCode: 0x1233,
+                attributes: {
+                    delayOpenAttrId: {ID: 0x0000, type: Zcl.DataType.UINT16},
+                },
+                commands: {},
+                commandsResponse: {},
+            }),
+        ],
     },
     {
         zigbeeModel: ['3RDTS01056Z'],
@@ -140,6 +186,16 @@ const definitions: DefinitionWithExtend[] = [
             battery(),
             iasZoneAlarm({zoneType: 'contact', zoneAttributes: ['alarm_1', 'battery_low']}),
             forcePowerSource({powerSource: 'Battery'}),
+            deviceAddCustomCluster('3rGarageDoorSpecialCluster', {
+                ID: 0xff01,
+                manufacturerCode: 0x1407,
+                attributes: {
+                    delayOpenAttrId: {ID: 0x0000, type: Zcl.DataType.UINT16},
+                    zclCabrationAttrId: {ID: 0x0003, type: Zcl.DataType.UINT16},
+                },
+                commands: {},
+                commandsResponse: {},
+            }),
         ],
         ota: ota.zigbeeOTA,
     },
@@ -203,10 +259,48 @@ const definitions: DefinitionWithExtend[] = [
         model: '3RTHS24BZ',
         vendor: 'Third Reality',
         description: 'Temperature and humidity sensor',
-        fromZigbee: [fz.temperature, fz.humidity],
-        toZigbee: [],
-        exposes: [e.temperature(), e.humidity()],
-        extend: [battery({voltage: true}), forcePowerSource({powerSource: 'Battery'})],
+        extend: [
+            temperature(),
+            humidity(),
+            battery(),
+            battery({voltage: true}),
+            forcePowerSource({powerSource: 'Battery'}),
+            deviceAddCustomCluster('3rSpecialCluster', {
+                ID: 0xff01,
+                manufacturerCode: 0x1233,
+                attributes: {
+                    celsiusDegreeCalibration: {ID: 0x0031, type: Zcl.DataType.INT16},
+                    humidityCalibration: {ID: 0x0032, type: Zcl.DataType.INT16},
+                    fahrenheitDegreeCalibration: {ID: 0x0033, type: Zcl.DataType.INT16},
+                },
+                commands: {},
+                commandsResponse: {},
+            }),
+        ],
+        ota: ota.zigbeeOTA,
+    },
+    {
+        zigbeeModel: ['3RSM0147Z'],
+        model: '3RSM0147Z',
+        vendor: 'Third Reality',
+        description: 'Soil sensor',
+        extend: [
+            temperature(),
+            humidity(),
+            battery(),
+            forcePowerSource({powerSource: 'Battery'}),
+            deviceAddCustomCluster('3rSoilSpecialCluster', {
+                ID: 0xff01,
+                manufacturerCode: 0x1407,
+                attributes: {
+                    celsiusDegreeCalibration: {ID: 0x0031, type: Zcl.DataType.INT16},
+                    humidityCalibration: {ID: 0x0032, type: Zcl.DataType.INT16},
+                    fahrenheitDegreeCalibration: {ID: 0x0033, type: Zcl.DataType.INT16},
+                },
+                commands: {},
+                commandsResponse: {},
+            }),
+        ],
         ota: ota.zigbeeOTA,
     },
     {
@@ -214,7 +308,23 @@ const definitions: DefinitionWithExtend[] = [
         model: '3RTHS0224Z',
         vendor: 'Third Reality',
         description: 'Temperature and humidity sensor lite',
-        extend: [temperature(), humidity(), battery(), forcePowerSource({powerSource: 'Battery'})],
+        extend: [
+            temperature(),
+            humidity(),
+            battery(),
+            forcePowerSource({powerSource: 'Battery'}),
+            deviceAddCustomCluster('3rSpecialCluster', {
+                ID: 0xff01,
+                manufacturerCode: 0x1233,
+                attributes: {
+                    celsiusDegreeCalibration: {ID: 0x0031, type: Zcl.DataType.INT16},
+                    humidityCalibration: {ID: 0x0032, type: Zcl.DataType.INT16},
+                    fahrenheitDegreeCalibration: {ID: 0x0033, type: Zcl.DataType.INT16},
+                },
+                commands: {},
+                commandsResponse: {},
+            }),
+        ],
         ota: ota.zigbeeOTA,
     },
     {
@@ -262,6 +372,20 @@ const definitions: DefinitionWithExtend[] = [
             device.powerSource = 'Battery';
             device.save();
         },
+        extend: [
+            deviceAddCustomCluster('3rVirationSpecialcluster', {
+                ID: 0xfff1,
+                manufacturerCode: 0x1233,
+                attributes: {
+                    coolDownTime: {ID: 0x0004, type: Zcl.DataType.UINT16},
+                    xAxis: {ID: 0x0001, type: Zcl.DataType.UINT16},
+                    yAxis: {ID: 0x0002, type: Zcl.DataType.UINT16},
+                    zAxis: {ID: 0x0003, type: Zcl.DataType.UINT16},
+                },
+                commands: {},
+                commandsResponse: {},
+            }),
+        ],
     },
     {
         zigbeeModel: ['3RSNL02043Z'],
@@ -275,9 +399,9 @@ const definitions: DefinitionWithExtend[] = [
                 ID: 0xfc00,
                 manufacturerCode: 0x130d,
                 attributes: {
-                    cold_down_time: {ID: 0x0003, type: Zcl.DataType.UINT16},
-                    local_routin_time: {ID: 0x0004, type: Zcl.DataType.UINT16},
-                    lux_threshold: {ID: 0x0005, type: Zcl.DataType.UINT16},
+                    coldDownTime: {ID: 0x0003, type: Zcl.DataType.UINT16},
+                    localRoutinTime: {ID: 0x0004, type: Zcl.DataType.UINT16},
+                    luxThreshold: {ID: 0x0005, type: Zcl.DataType.UINT16},
                 },
                 commands: {},
                 commandsResponse: {},
