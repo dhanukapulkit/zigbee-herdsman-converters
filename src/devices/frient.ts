@@ -1,36 +1,40 @@
-import fz from '../converters/fromZigbee';
-import * as exposes from '../lib/exposes';
-import {electricityMeter, onOff, ota} from '../lib/modernExtend';
-import * as reporting from '../lib/reporting';
-import {DefinitionWithExtend} from '../lib/types';
-const e = exposes.presets;
+import {develcoModernExtend} from "../lib/develco";
+import * as m from "../lib/modernExtend";
+import type {DefinitionWithExtend} from "../lib/types";
 
-const definitions: DefinitionWithExtend[] = [
+// NOTE! Develco and Frient is the same company, therefore we use develco specific things in here.
+
+export const definitions: DefinitionWithExtend[] = [
     {
-        zigbeeModel: ['EMIZB-141'],
-        model: 'EMIZB-141',
-        vendor: 'frient',
-        description: 'Smart powermeter Zigbee bridge',
-        fromZigbee: [fz.metering, fz.battery],
-        toZigbee: [],
-        extend: [ota()],
-        exposes: [e.battery(), e.power(), e.energy()],
-        configure: async (device, coordinatorEndpoint) => {
-            const endpoint = device.getEndpoint(2);
-            await reporting.bind(endpoint, coordinatorEndpoint, ['seMetering', 'genPowerCfg']);
-        },
+        zigbeeModel: ["EMIZB-141"],
+        model: "EMIZB-141",
+        vendor: "Frient",
+        description: "Electricity meter interface 2 LED",
+        extend: [
+            m.electricityMeter({cluster: "metering", power: {divisor: 1000, multiplier: 1}, energy: {divisor: 1000, multiplier: 1}}),
+            m.battery(),
+            develcoModernExtend.addCustomClusterManuSpecificDevelcoGenBasic(),
+            develcoModernExtend.readGenBasicPrimaryVersions(),
+            develcoModernExtend.pulseConfiguration(),
+            develcoModernExtend.currentSummation(),
+        ],
+        ota: true,
     },
     {
-        zigbeeModel: ['SMRZB-153'],
-        model: 'SMRZB-153',
-        vendor: 'Frient A/S',
-        description: 'Smart Cable - Power switch with power measurement',
-        extend: [onOff({configureReporting: false}), electricityMeter()],
-        endpoint: (device) => {
+        zigbeeModel: ["SMRZB-153"],
+        model: "SMRZB-153",
+        vendor: "Frient",
+        description: "Smart Cable - Power switch with power measurement",
+        extend: [m.onOff({configureReporting: false}), m.electricityMeter()],
+        endpoint: () => {
             return {default: 2};
         },
     },
+    {
+        zigbeeModel: ["EMIZB-151"],
+        model: "EMIZB-151",
+        vendor: "Frient",
+        description: "HAN P1 power-meter sensor",
+        extend: [m.electricityMeter({threePhase: true})],
+    },
 ];
-
-export default definitions;
-module.exports = definitions;
